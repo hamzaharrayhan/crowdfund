@@ -26,14 +26,42 @@ func (u *userHandler) RegisterUser(c *gin.Context) {
 		errorMessages := gin.H{"errors": errors}
 		response := helper.JSONResponse("Register account failed", http.StatusUnprocessableEntity, "error", errorMessages)
 		c.JSON(http.StatusUnprocessableEntity, response)
+		return
 	}
 
 	newUser, err := u.userService.RegisterUser(input)
 	if err != nil {
 		response := helper.JSONResponse("Register account failed", http.StatusUnprocessableEntity, "error", nil)
 		c.JSON(http.StatusUnprocessableEntity, response)
+		return
 	}
 	formattedResponse := user.FormatterUserResponse(newUser, "tokentoken")
 	response := helper.JSONResponse("Account has been created", 200, "success", formattedResponse)
+	c.JSON(http.StatusOK, response)
+}
+
+func (u *userHandler) LoginHandler(c *gin.Context) {
+	var input user.LoginUserInput
+	err := c.ShouldBindJSON(&input)
+
+	if err != nil {
+		errors := helper.ResponseValidationError(err)
+		errorMessages := gin.H{"errors": errors}
+		response := helper.JSONResponse("Login failed", http.StatusUnprocessableEntity, "error", errorMessages)
+
+		c.JSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	loggedInUser, err := u.userService.UserLogin(input)
+	if err != nil {
+		errorMessage := gin.H{"error": err.Error()}
+		response := helper.JSONResponse("Login failed", http.StatusUnprocessableEntity, "error", errorMessage)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	formattedResponse := user.FormatterUserResponse(loggedInUser, "tokentoken")
+	response := helper.JSONResponse("Successfully Logged In", http.StatusOK, "success", formattedResponse)
 	c.JSON(http.StatusOK, response)
 }
