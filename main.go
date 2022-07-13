@@ -32,5 +32,6 @@ func main() {
 	//bikin route ke user dengan prefix /api/v1
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.LoginHandler)
+	api.POST("/email_checkers", userHandler.CheckEmailAvailability)
 	router.Run()
 }
