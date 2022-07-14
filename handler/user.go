@@ -93,3 +93,40 @@ func (u *userHandler) CheckEmailAvailability(c *gin.Context) {
 	response := helper.JSONResponse(metaMessage, http.StatusOK, "success", data)
 	c.JSON(http.StatusOK, response)
 }
+
+func (u *userHandler) UploadUserAvatar(c *gin.Context) {
+	//get input
+	//panggil service handle input
+	//service panggil db repository
+	//db menyimpan gambar, mencari user dgn token/id, updateuser
+	file, err := c.FormFile("avatar")
+	if err != nil {
+		data := gin.H{"is_Uploaded": false}
+		response := helper.JSONResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	path := "images/" + file.Filename
+	err = c.SaveUploadedFile(file, path)
+	if err != nil {
+		data := gin.H{"is_Uploaded": false}
+		response := helper.JSONResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	userID := 1
+	_, err = u.userService.SaveAvatar(userID, path)
+
+	if err != nil {
+		data := gin.H{"is_Uploaded": false}
+		response := helper.JSONResponse("Failed to upload avatar image", http.StatusBadRequest, "error", data)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	data := gin.H{"is_uploaded": true}
+	response := helper.JSONResponse("Avatar is successfully uploaded", http.StatusOK, "success", data)
+	c.JSON(http.StatusOK, response)
+}
