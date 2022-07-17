@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"crowdfund/auth"
 	"crowdfund/helper"
 	"crowdfund/user"
 	"net/http"
@@ -10,10 +11,11 @@ import (
 
 type userHandler struct {
 	userService user.Service
+	authService auth.Service
 }
 
-func NewUserHandler(userService user.Service) *userHandler {
-	return &userHandler{userService}
+func NewUserHandler(userService user.Service, authService auth.Service) *userHandler {
+	return &userHandler{userService, authService}
 }
 
 func (u *userHandler) RegisterUser(c *gin.Context) {
@@ -31,11 +33,20 @@ func (u *userHandler) RegisterUser(c *gin.Context) {
 
 	newUser, err := u.userService.RegisterUser(input)
 	if err != nil {
-		response := helper.JSONResponse("Register account failed", http.StatusUnprocessableEntity, "error", nil)
-		c.JSON(http.StatusUnprocessableEntity, response)
+		response := helper.JSONResponse("Register account failed", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
 		return
 	}
-	formattedResponse := user.FormatterUserResponse(newUser, "tokentoken")
+
+	token, err := u.authService.GenerateToken(newUser.ID)
+
+	if err != nil {
+		response := helper.JSONResponse("Register account failed", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	formattedResponse := user.FormatterUserResponse(newUser, token)
 	response := helper.JSONResponse("Account has been created", 200, "success", formattedResponse)
 	c.JSON(http.StatusOK, response)
 }
@@ -61,7 +72,15 @@ func (u *userHandler) LoginHandler(c *gin.Context) {
 		return
 	}
 
-	formattedResponse := user.FormatterUserResponse(loggedInUser, "tokentoken")
+	token, err := u.authService.GenerateToken(loggedInUser.ID)
+
+	if err != nil {
+		response := helper.JSONResponse("Login failed", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	formattedResponse := user.FormatterUserResponse(loggedInUser, token)
 	response := helper.JSONResponse("Successfully Logged In", http.StatusOK, "success", formattedResponse)
 	c.JSON(http.StatusOK, response)
 }
