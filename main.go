@@ -2,10 +2,15 @@ package main
 
 import (
 	"crowdfund/auth"
+	"crowdfund/campaign"
 	"crowdfund/handler"
+	"crowdfund/helper"
 	"crowdfund/user"
 	"log"
+	"net/http"
+	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -20,11 +25,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// user
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
 	authService := auth.NewJwtService()
 
 	userHandler := handler.NewUserHandler(userService, authService)
+
+	//campaign
+	campaignRepository := campaign.NewRepository(db)
+	campaignService := campaign.NewService(campaignRepository)
+	campaignHandler := handler.NewCampaignHandler(campaignService)
 
 	//bikin router
 	router := gin.Default()
@@ -36,6 +47,53 @@ func main() {
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.LoginHandler)
 	api.POST("/email_checkers", userHandler.CheckEmailAvailability)
-	api.POST("/avatars", userHandler.UploadUserAvatar)
+	api.POST("/avatars", authMiddleware(authService, userService), userHandler.UploadUserAvatar)
+
+	//route ke campaigns
+	api.GET("/campaigns", campaignHandler.GetCampaigns)
 	router.Run()
+}
+
+func authMiddleware(authService auth.Service, userService user.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+
+		if !strings.Contains(authHeader, "Bearer") {
+			response := helper.JSONResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		arrayAuthHeader := strings.Split(authHeader, " ")
+		token := ""
+		if len(arrayAuthHeader) == 2 {
+			token = arrayAuthHeader[1]
+		}
+
+		validatedToken, err := authService.ValidateToken(token)
+		if err != nil {
+			response := helper.JSONResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		claims, ok := validatedToken.Claims.(jwt.MapClaims)
+
+		if !ok || !validatedToken.Valid {
+			response := helper.JSONResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		userID := int(claims["user_id"].(float64))
+		user, err := userService.GetUserByID(userID)
+
+		if err != nil {
+			response := helper.JSONResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		c.Set("currentUser", user)
+	}
 }
