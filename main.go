@@ -2,6 +2,7 @@ package main
 
 import (
 	"crowdfund/auth"
+	"crowdfund/campaign"
 	"crowdfund/handler"
 	"crowdfund/helper"
 	"crowdfund/user"
@@ -24,11 +25,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// user
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
 	authService := auth.NewJwtService()
 
 	userHandler := handler.NewUserHandler(userService, authService)
+
+	//campaign
+	campaignRepository := campaign.NewRepository(db)
+	campaignService := campaign.NewService(campaignRepository)
+	campaignHandler := handler.NewCampaignHandler(campaignService)
 
 	//bikin router
 	router := gin.Default()
@@ -41,6 +48,9 @@ func main() {
 	api.POST("/sessions", userHandler.LoginHandler)
 	api.POST("/email_checkers", userHandler.CheckEmailAvailability)
 	api.POST("/avatars", authMiddleware(authService, userService), userHandler.UploadUserAvatar)
+
+	//route ke campaigns
+	api.GET("/campaigns", campaignHandler.GetCampaigns)
 	router.Run()
 }
 
