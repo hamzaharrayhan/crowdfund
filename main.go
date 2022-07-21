@@ -42,7 +42,7 @@ func main() {
 
 	//bikin grup routing dengan prefix yang sama
 	api := router.Group("/api/v1")
-
+	router.Static("/images", "./images")
 	//bikin route ke user dengan prefix /api/v1
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.LoginHandler)
@@ -51,6 +51,8 @@ func main() {
 
 	//route ke campaigns
 	api.GET("/campaigns", campaignHandler.GetCampaigns)
+	api.GET("/campaigns/:id", campaignHandler.GetCampaign)
+
 	router.Run()
 }
 
