@@ -64,7 +64,7 @@ type UserCampaignDetailFormatter struct {
 
 type ImagesCampaignDetailFormatter struct {
 	ImageURL  string
-	IsPrimary bool
+	IsPrimary int
 }
 
 func FormatCampaignDetail(campaign Campaign) CampaignDetailFormatter {
