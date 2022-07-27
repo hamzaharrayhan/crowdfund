@@ -4,6 +4,7 @@ import (
 	"crowdfund/auth"
 	"crowdfund/helper"
 	"crowdfund/user"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -126,7 +127,10 @@ func (u *userHandler) UploadUserAvatar(c *gin.Context) {
 		return
 	}
 
-	path := "images/" + file.Filename
+	currentUser := c.MustGet("currentUser").(user.User)
+	userID := currentUser.ID
+
+	path := fmt.Sprintf("images/%d-%s", userID, file.Filename)
 	err = c.SaveUploadedFile(file, path)
 	if err != nil {
 		data := gin.H{"is_Uploaded": false}
@@ -135,8 +139,6 @@ func (u *userHandler) UploadUserAvatar(c *gin.Context) {
 		return
 	}
 
-	currentUser := c.MustGet("currentUser").(user.User)
-	userID := currentUser.ID
 	_, err = u.userService.SaveAvatar(userID, path)
 
 	if err != nil {
