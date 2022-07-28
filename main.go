@@ -5,6 +5,7 @@ import (
 	"crowdfund/campaign"
 	"crowdfund/handler"
 	"crowdfund/helper"
+	"crowdfund/transaction"
 	"crowdfund/user"
 	"log"
 	"net/http"
@@ -37,6 +38,11 @@ func main() {
 	campaignService := campaign.NewService(campaignRepository)
 	campaignHandler := handler.NewCampaignHandler(campaignService)
 
+	// transactions
+	transactionRepository := transaction.NewRepository(db)
+	transactionService := transaction.NewService(transactionRepository, campaignRepository)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
+
 	//bikin router
 	router := gin.Default()
 
@@ -55,6 +61,9 @@ func main() {
 	api.POST("/campaigns", authMiddleware(authService, userService), campaignHandler.CreateCampaign)
 	api.PUT("/campaigns/:id", authMiddleware(authService, userService), campaignHandler.UpdateCampaign)
 	api.POST("/campaign-images", authMiddleware(authService, userService), campaignHandler.SaveCampaignImage)
+
+	// route ke campaign transactions
+	api.GET("/campaigns/:id/transactions", authMiddleware(authService, userService), transactionHandler.GetCampaignTransactions)
 
 	router.Run()
 }
