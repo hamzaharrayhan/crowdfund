@@ -25,18 +25,32 @@ func (h *transactionHandler) GetCampaignTransactions(c *gin.Context) {
 	input.User = currentUser
 
 	if err != nil {
-		response := helper.JSONResponse("Failed to retrieve transactions history", http.StatusBadRequest, "error", nil)
+		response := helper.JSONResponse("Failed to retrieve campaign transactions history", http.StatusBadRequest, "error", nil)
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	transactions, err := h.service.GetByCampaignID(input)
 	if err != nil {
-		response := helper.JSONResponse("Failed to retrieve transactions history", http.StatusBadRequest, "error", nil)
+		response := helper.JSONResponse("Failed to retrieve campaign transactions history", http.StatusBadRequest, "error", nil)
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
 
 	response := helper.JSONResponse("Campaign transactions history", http.StatusOK, "success", transaction.FormatCampaignTransactions(transactions))
+	c.JSON(http.StatusOK, response)
+}
+
+func (h *transactionHandler) GetUserTransactions(c *gin.Context) {
+	currentUser := c.MustGet("currentUser").(user.User)
+
+	transactions, err := h.service.GetByUserID(currentUser.ID)
+	if err != nil {
+		response := helper.JSONResponse("Failed to retrieve user transactions history", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response := helper.JSONResponse("Success to retrieve user transactions history", http.StatusOK, "success", transaction.FormatUserTransactions(transactions))
 	c.JSON(http.StatusOK, response)
 }
