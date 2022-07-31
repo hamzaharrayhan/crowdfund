@@ -5,6 +5,7 @@ import (
 	"crowdfund/campaign"
 	"crowdfund/handler"
 	"crowdfund/helper"
+	"crowdfund/payment"
 	"crowdfund/transaction"
 	"crowdfund/user"
 	"log"
@@ -29,8 +30,8 @@ func main() {
 	// user
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
-	authService := auth.NewJwtService()
 
+	authService := auth.NewJwtService()
 	userHandler := handler.NewUserHandler(userService, authService)
 
 	//campaign
@@ -40,7 +41,8 @@ func main() {
 
 	// transactions
 	transactionRepository := transaction.NewRepository(db)
-	transactionService := transaction.NewService(transactionRepository, campaignRepository)
+	paymentService := payment.NewService()
+	transactionService := transaction.NewService(transactionRepository, campaignRepository, paymentService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 
 	//bikin router
@@ -65,6 +67,7 @@ func main() {
 	// route ke campaign transactions
 	api.GET("/campaigns/:id/transactions", authMiddleware(authService, userService), transactionHandler.GetCampaignTransactions)
 	api.GET("/transactions", authMiddleware(authService, userService), transactionHandler.GetUserTransactions)
+	api.POST("/transactions", authMiddleware(authService, userService), transactionHandler.CreateTransaction)
 
 	router.Run()
 }
