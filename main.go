@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -47,6 +48,7 @@ func main() {
 
 	//bikin router
 	router := gin.Default()
+	router.Use(cors.Default())
 
 	//bikin grup routing dengan prefix yang sama
 	api := router.Group("/api/v1")
@@ -56,6 +58,7 @@ func main() {
 	api.POST("/sessions", userHandler.LoginHandler)
 	api.POST("/email_checkers", userHandler.CheckEmailAvailability)
 	api.POST("/avatars", authMiddleware(authService, userService), userHandler.UploadUserAvatar)
+	api.GET("/users/fetch", authMiddleware(authService, userService), userHandler.FetchUser)
 
 	//route ke campaigns
 	api.GET("/campaigns", campaignHandler.GetCampaigns)
@@ -68,6 +71,7 @@ func main() {
 	api.GET("/campaigns/:id/transactions", authMiddleware(authService, userService), transactionHandler.GetCampaignTransactions)
 	api.GET("/transactions", authMiddleware(authService, userService), transactionHandler.GetUserTransactions)
 	api.POST("/transactions", authMiddleware(authService, userService), transactionHandler.CreateTransaction)
+	api.POST("/transactions/notification", transactionHandler.GetNotification)
 
 	router.Run()
 }

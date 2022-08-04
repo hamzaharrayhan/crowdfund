@@ -152,3 +152,16 @@ func (u *userHandler) UploadUserAvatar(c *gin.Context) {
 	response := helper.JSONResponse("Avatar is successfully uploaded", http.StatusOK, "success", data)
 	c.JSON(http.StatusOK, response)
 }
+
+func (h *userHandler) FetchUser(c *gin.Context) {
+	currentUser := c.MustGet("currentUser").(user.User)
+	token, err := h.authService.GenerateToken(currentUser.ID)
+	if err != nil {
+		response := helper.JSONResponse("Failed to get token", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	formatter := user.FormatterUserResponse(currentUser, token)
+	response := helper.JSONResponse("Successfully fetch user data", http.StatusOK, "success", formatter)
+	c.JSON(http.StatusOK, response)
+}
